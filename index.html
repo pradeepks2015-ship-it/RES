@@ -195,6 +195,27 @@ body{font-family:"Noto Sans Devanagari",sans-serif;background:var(--bg);color:va
 .toast.ok{border-color:var(--green);color:var(--green);}
 .toast.err{border-color:var(--red);color:var(--red);}
 .toast.inf{border-color:var(--blue);color:#64b5f6;}
+/* PHONE ACTION POPUP */
+.ph-overlay{position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;}
+.ph-overlay.open{opacity:1;pointer-events:all;}
+.ph-sheet{background:var(--surface);border-radius:22px 22px 0 0;width:100%;max-width:480px;padding:10px 18px 36px;border:1px solid var(--border);border-bottom:none;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);}
+.ph-overlay.open .ph-sheet{transform:translateY(0);}
+.ph-handle{width:34px;height:4px;border-radius:2px;background:var(--border);margin:8px auto 14px;}
+.ph-name{font-family:"Baloo 2",cursive;font-size:15px;font-weight:800;color:var(--gold2);margin-bottom:2px;}
+.ph-num{font-size:13px;color:var(--muted);margin-bottom:18px;letter-spacing:.5px;}
+.ph-btns{display:flex;flex-direction:column;gap:10px;}
+.ph-btn{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:var(--card);cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s;}
+.ph-btn:active{opacity:.8;}
+.ph-btn-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.ph-btn-call .ph-btn-icon{background:rgba(0,200,150,.15);}
+.ph-btn-sms .ph-btn-icon{background:rgba(33,150,243,.15);}
+.ph-btn-wa .ph-btn-icon{background:rgba(37,211,102,.15);}
+.ph-btn-call{border-color:rgba(0,200,150,.3);}
+.ph-btn-sms{border-color:rgba(33,150,243,.3);}
+.ph-btn-wa{border-color:rgba(37,211,102,.3);}
+.ph-btn-title{font-size:13px;font-weight:700;color:var(--text);}
+.ph-btn-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+.ph-cancel{width:100%;padding:12px;border-radius:11px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:"Noto Sans Devanagari",sans-serif;font-size:13px;font-weight:600;margin-top:12px;}
 /* SCORECARD */
 .sc-hq-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
 .sc-hq-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:10px 11px;cursor:pointer;transition:border-color .2s;}
@@ -441,6 +462,39 @@ body{font-family:"Noto Sans Devanagari",sans-serif;background:var(--bg);color:va
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- PHONE ACTION POPUP -->
+<div class="ph-overlay" id="ph-overlay" onclick="closePhOutside(event)">
+  <div class="ph-sheet">
+    <div class="ph-handle"></div>
+    <div class="ph-name" id="ph-name">उपभोक्ता</div>
+    <div class="ph-num" id="ph-num">📞 —</div>
+    <div class="ph-btns">
+      <a class="ph-btn ph-btn-call" id="ph-call-btn" href="#">
+        <div class="ph-btn-icon">📞</div>
+        <div>
+          <div class="ph-btn-title">कॉल करें</div>
+          <div class="ph-btn-sub">सीधे फोन लगाएं</div>
+        </div>
+      </a>
+      <a class="ph-btn ph-btn-sms" id="ph-sms-btn" href="#">
+        <div class="ph-btn-icon">💬</div>
+        <div>
+          <div class="ph-btn-title">SMS भेजें</div>
+          <div class="ph-btn-sub">Text Message</div>
+        </div>
+      </a>
+      <a class="ph-btn ph-btn-wa" id="ph-wa-btn" href="#" target="_blank">
+        <div class="ph-btn-icon">🟢</div>
+        <div>
+          <div class="ph-btn-title">WhatsApp करें</div>
+          <div class="ph-btn-sub">WhatsApp Message</div>
+        </div>
+      </a>
+    </div>
+    <button class="ph-cancel" onclick="closePhModal()">रद्द करें</button>
+  </div>
+</div>
 
 <script>
 var HQS = ["फुलारा","कातलबोड़ी","लखनवाडा","नंदोरा","सिवनी","डुंडासिवनी","आमागढ़","डोरलीछतरपुर","लुघरवाडा"];
@@ -793,7 +847,7 @@ function renderListWith(data){
       "<div class='cc-amt'>₹"+Number(x.amount).toLocaleString("hi-IN")+" <span>बकाया</span></div>"+
       "<div class='cc-chips'>"+
         (x.acc?"<span class='chip chip-acc' onclick=\"window.open('https://billing.mpez.co.in','_blank')\">📄 "+escHtml(x.acc)+"</span>":"")+
-        (x.phone?"<span class='chip chip-ph'>📞 "+escHtml(x.phone)+"</span>":"")+
+        (x.phone?"<span class='chip chip-ph' style='cursor:pointer;' onclick='openPhModal("+JSON.stringify(x.name)+","+JSON.stringify(x.phone)+")'>📞 "+escHtml(x.phone)+"</span>":"")+
         (x.addr?"<span class='chip chip-addr'>📍 "+escHtml(x.addr)+"</span>":"")+
       "</div>"+
       "<div class='cc-extra'>"+
@@ -1310,6 +1364,21 @@ function dlTemplate(){
   a.download="res_dc_vasuli_template.csv"; a.click();
   toast("Template डाउनलोड...","inf");
 }
+
+// ─── PHONE ACTION MODAL ───────────────────────────────────────────────────────
+function openPhModal(name, phone){
+  var clean = phone.replace(/\D/g,"");
+  // WhatsApp message pre-filled
+  var waMsg = encodeURIComponent("नमस्ते "+name+" जी,\nआपका बिजली बिल बकाया है। कृपया शीघ्र भुगतान करें।\nधन्यवाद।");
+  document.getElementById("ph-name").textContent = name;
+  document.getElementById("ph-num").textContent = "📞 "+phone;
+  document.getElementById("ph-call-btn").href = "tel:"+clean;
+  document.getElementById("ph-sms-btn").href = "sms:"+clean+"?body="+encodeURIComponent("नमस्ते "+name+" जी, आपका बिजली बिल बकाया है। कृपया शीघ्र भुगतान करें।");
+  document.getElementById("ph-wa-btn").href = "https://wa.me/91"+clean+"?text="+waMsg;
+  document.getElementById("ph-overlay").classList.add("open");
+}
+function closePhModal(){document.getElementById("ph-overlay").classList.remove("open");}
+function closePhOutside(e){if(e.target===document.getElementById("ph-overlay"))closePhModal();}
 
 // INIT
 function startApp(){

@@ -334,7 +334,7 @@ body{font-family:"Noto Sans Devanagari",sans-serif;background:var(--bg);color:va
     <div class="search-wrap">
       <div class="si-wrap">
         <span class="si-icon">&#128269;</span>
-        <input type="text" class="si" id="search-inp" placeholder="नाम या Consumer No. खोजें..." oninput="renderList()">
+        <input type="text" class="si" id="search-inp" placeholder="नाम, Consumer No. या Mobile No. खोजें..." oninput="renderList()">
       </div>
     </div>
     <div class="filter-wrap">
@@ -797,8 +797,12 @@ function renderListWith(data){
   var q=(document.getElementById("search-inp").value||"").toLowerCase().trim();
   var c=document.getElementById("con-list");
   var filtered=data.filter(function(x){
-    return(!q||(x.name||"").toLowerCase().includes(q)||(x.acc||"").toLowerCase().includes(q))&&
-           (activeFilter==="all"||x.status===activeFilter);
+    var matchQ=!q||
+      (x.name||"").toLowerCase().includes(q)||
+      (x.acc||"").toLowerCase().includes(q)||
+      (x.phone||"").replace(/\D/g,"").includes(q.replace(/\D/g,""))||
+      (x.phone||"").toLowerCase().includes(q);
+    return matchQ&&(activeFilter==="all"||x.status===activeFilter);
   });
   if(!filtered.length){
     c.innerHTML="<div class='empty'><div class='empty-ico'>"+(q?"🔍":"📋")+"</div>"+
